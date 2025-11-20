@@ -1,0 +1,50 @@
+java har 5 ulike måter å lage tråder på. alle gjør
+egentlig det samme, men passer til ulike situasjoner.
+målet i alle tilfeller er:
+    -Opprette et Thread-objekt
+    -Angi hva tråden skal gjøre (i run())
+    -Starte tråden med .start()
+
+Alternativ 1: Arve fra Theead-klassen:
+    dette er den klassiske, men minst fleksible måten.
+    Når brukes dette?
+        -Når du vil lage en egen trådklasse med spesifikke
+         egenskaper
+        -Når du trenger å subklasse Thread
+        -ikke andbefalt i moderne java (fordi du låser deg
+         til én superklasse)
+
+Alternativ 2: Anonym Thread-subklasse:
+    Her lager du klassen direkte når du oppretter objektet.
+    Når brukes dette?
+        -Når du ikke trenger en egen fil/ klasse
+        -Rask og enkel for små ting
+
+Alternativ 3: implementere Runnable:
+    dette er den mest fleksible metoden.
+    hvorfor er dette bedre enn alternativ 1?
+        -du kan arve en annen klasse (fordi du ikke bruker
+        extends Thread)
+        -Mange Java-API inneholder metoder som krever Runnable
+        -passer bedre for store prosjekter.
+
+Alternativ 4: Anonym Runnable:
+    samme som over, men uten egen klassefil.
+    brukes når:
+        -du vil ha kode rett i metoden.
+        -men fortsatt bruke Runnable-modellen
+
+Alternativ 5: lambda-utrykk (mest moderne)
+    Runnable er @FunctionallInterface (bare én metode ->
+    run()).
+    dette er den klart mest brukte måten i moderne java.
+    når brukes dette?
+        -Når du vil skrive minst mulig kode.
+        -når trådens logikk er kort.
+        -når du ikke trenger en egen klasse.
+
+Viktig: .start() vs .run()
+dette er en klassisk studentfelle
+t.start(); //riktig - stater en NY tråd.
+t.run(); //feil - kjører run() i MAIN-tråden
+

@@ -1,0 +1,336 @@
+Tema: Opprette:
+
+java har 5 ulike måter å lage tråder på. alle gjør
+egentlig det samme, men passer til ulike situasjoner.
+målet i alle tilfeller er:
+    -Opprette et Thread-objekt
+    -Angi hva tråden skal gjøre (i run())
+    -Starte tråden med .start()
+
+Alternativ 1: Arve fra Theead-klassen:
+    dette er den klassiske, men minst fleksible måten.
+    Når brukes dette?
+        -Når du vil lage en egen trådklasse med spesifikke
+         egenskaper
+        -Når du trenger å subklasse Thread
+        -ikke andbefalt i moderne java (fordi du låser deg
+         til én superklasse)
+
+Alternativ 2: Anonym Thread-subklasse:
+    Her lager du klassen direkte når du oppretter objektet.
+    Når brukes dette?
+        -Når du ikke trenger en egen fil/ klasse
+        -Rask og enkel for små ting
+
+Alternativ 3: implementere Runnable:
+    dette er den mest fleksible metoden.
+    hvorfor er dette bedre enn alternativ 1?
+        -du kan arve en annen klasse (fordi du ikke bruker
+        extends Thread)
+        -Mange Java-API inneholder metoder som krever Runnable
+        -passer bedre for store prosjekter.
+
+Alternativ 4: Anonym Runnable:
+    samme som over, men uten egen klassefil.
+    brukes når:
+        -du vil ha kode rett i metoden.
+        -men fortsatt bruke Runnable-modellen
+
+Alternativ 5: lambda-utrykk (mest moderne)
+    Runnable er @FunctionallInterface (bare én metode ->
+    run()).
+    dette er den klart mest brukte måten i moderne java.
+    når brukes dette?
+        -Når du vil skrive minst mulig kode.
+        -når trådens logikk er kort.
+        -når du ikke trenger en egen klasse.
+
+Viktig: .start() vs .run()
+dette er en klassisk studentfelle
+t.start(); //riktig - stater en NY tråd.
+t.run(); //feil - kjører run() i MAIN-tråden
+
+
+
+Tema: Pause, stoppe, vente og daemon-tråder:
+
+Thread.sleep(1000); // pause i 1 sekund
+Realistisk eksempel:
+    new Thread(() -> {
+        for (int i = 0; i < 5; i++) {
+            System.out.println(i);
+            try {
+                Thread.sleep(500); // 0.5 sek pause
+            } catch (InterruptedException e) {}
+        }
+    }).start();
+
+Å stoppe en tråd – BEST PRACTICE:
+Thread.stop() finnes, men den er forbudt (deprecated) fordi den kan drepe tråden midt i en kritisk sekjon og ødelegge minne
+Derfor stoppes tråder på den “snille måten”:
+Bruk en boolean variabel:
+    public class Arbeider implements Runnable {
+        private boolean running = true;
+
+        public void stopRunning() {
+            running = false;
+        }
+
+        @Override
+        public void run() {
+            while (running) {
+                System.out.println("Jobber...");
+            }
+            System.out.println("Avslutter tråd.");
+        }
+    }
+Start og stopp:
+    Arbeider a = new Arbeider();
+    Thread t = new Thread(a);
+    t.start();
+
+    Thread.sleep(2000);
+    a.stopRunning();   // sier “du kan avslutte nå”
+Prinsipp: Tråden stopper seg selv når den oppdager at running = false.
+
+Å vente på at en tråd skal bli ferdig – join():
+join() lar en tråd vente på en annen tråd.
+t.join(); Betyr: “Main-tråden venter til t er ferdig før den fortsetter.”
+Eksempel:
+    Thread t = new Thread(() -> {
+        System.out.println("Jobber...");
+        try { Thread.sleep(2000); } catch (Exception e) {}
+        System.out.println("Ferdig!");
+    });
+
+    t.start();
+    t.join(); // main venter her
+
+    System.out.println("Main fortsetter.");
+Output:
+    Jobber...
+    Ferdig!
+    Main fortsetter.
+
+Realistisk bruk: Når du har flere tråder som skal fullføre før et resultat kan oppsummeres.
+
+Når avsluttes et Java-program?
+Programmet avslutter når ALLE tråder med ikke-daemon-status er ferdige.
+Hvis en tråd aldri avsluttes, kan programmet henge for alltid.
+ Daemon-tråder:
+ Dette er bakgrunnstråder som ikke holder programmet i live.
+ Eksempel: garbage collector, logge-tråder, overvåkningstråder.
+ Slik setter du en tråd til daemon:
+    Thread t = new Thread(() -> { ... });
+    t.setDaemon(true);
+    t.start();
+Hvis kun daemon-tråder er igjen → programmet avsluttes automatisk.
+Realistisk eksempel: En tråd som kjører hvert sekund og skriver logg:
+    Thread logger = new Thread(() -> {
+        while (true) {
+            System.out.println("Logger...");
+            try { Thread.sleep(1000); } catch (Exception e) {}
+        }
+    });
+    logger.setDaemon(true); // gjør det til en bakgrunnstråd
+    logger.start();
+
+
+
+
+nå kommer et av de viktigste temaene i hele multithreading:
+Tema: Race conditions, kritiske seksjoner og delte ressurser.
+
+Hva betyr “delte ressurser”?
+En delt ressurs er noe to eller flere tråder har tilgang til samtidig.
+Typiske delte ressurser:
+	•	En felles variabel (f.eks. en teller)
+	•	Et delt objekt
+	•	En liste eller map
+	•	En fil
+	•	En databaseforbindelse
+I Java blir alle objekter som ligger på heap tilgjengelige for alle tråder.
+
+Hva er et race condition?
+Et race condition skjer når:
+	•	To eller flere tråder
+	•	jobber på samme data
+	•	samtidig
+	•	og resultatet avhenger av hvem som kommer først
+Det kan føre til helt feil resultat.
+
+Realistisk eksempel: Telling samtidig
+La oss si vi har en delt variabel:
+    int teller = 0;
+To tråder gjør dette:
+Tråd 1: teller++
+Tråd 2: teller++
+Du forventer:
+    Sluttverdi = 2
+Men du kan få 1., hvorfor?
+Fordi ++ ikke er én operasjon. Det er egentlig:
+	1.	Les teller
+	2.	Øk med 1
+	3.	Skriv tilbake
+Hvis tråd 1 leser 0, og tråd 2 også leser 0, så skriver begge tilbake 1.
+Begge trådene tror de var sist → du mister en oppdatering.
+Det er et klassisk race condition.
+
+Hva er en kritisk seksjon?
+En kritisk seksjon er en bit kode som jobber med delt data, og som må kjøres alene av én tråd av gangen for at resultatet skal bli riktig.
+Eksempel:
+    teller++;
+Dette må være kritisk, fordi to tråder ikke kan gjøre det samtidig uten feil.
+Regel: Hvis en kodebit endrer på delte data → det er en kritisk seksjon.
+
+Hvorfor skjer race conditions i praksis?
+Fordi CPU-en bare late som flere ting skjer samtidig
+Moderne CPU-er:
+	•	Bytter mellom tråder mange ganger i sekundet
+	•	Stykker opp instrukser
+	•	Kan kontekst-switch midt i en operasjon
+Du vet aldri når den hopper mellom tråder → kaos hvis data deles feil.
+
+Eksempel med analogi: Burger-analogien
+To ansatte jobber på samme burger:
+	•	Ansatt 1 ser at burgeren mangler ost → legger på ost
+	•	Ansatt 2 ser at burgeren mangler ost → legger på ost
+Sluttresultat: dobbel ost, selv om det ikke var planen.
+Samme skjedd med teller++:
+Begge ser samme verdi, oppdaterer hver sin, og en oppdatering overskrives.
+
+Hvordan løser vi dette?
+Løsningen i Java er:
+➡synchronized
+➡låser / locks
+➡thread-safe datastrukturer
+➡immutable objekter
+Neste tema handler om dette: hvordan du låser kritiske seksjoner.
+
+
+
+
+Tema 6: synchronized – beskytte kritiske seksjoner
+
+Hva gjør synchronized egentlig?
+En synchronized-blokk lar kun én tråd om gangen kjøre koden inni blokken.
+Du kan tenke på det som en nøkkel til et rom:
+	•	Først tråd som går inn → låser døren
+	•	Andre tråder må vente
+	•	Når tråden er ferdig → døren åpnes, neste kan gå inn
+Dette er akkurat det vi trenger for å unngå race conditions.
+
+Syntax
+Synchronized-blokk:
+    synchronized (ballen) {
+        // kritisk seksjon
+    }
+ballen er “låseobjektet”.
+Det kan være hvilket som helst Java-objekt.
+
+Eksempel: Beskytte en teller
+La oss si to tråder gjør:
+    teller++;
+Vi beskytter med:
+    synchronized (teller) {
+        teller++;
+    }
+MEN! Dette er teknisk feil, fordi teller er en Integer (immutable), og ikke brukes som lock.
+Derfor gjør man heller:
+    synchronized (this) {
+        teller++;
+    }
+eller:
+    private final Object lock = new Object();
+
+    synchronized (lock) {
+        teller++;
+    }
+
+Synchronized-metode
+Du kan også merke en hel metode som “låst”:
+    public synchronized void opp() {
+        verdi++;
+    }
+Dette betyr:
+	•	Metoden er låst på this
+	•	Kun én tråd kan kjøre metoden om gangen
+Tilsvarer:
+    public void opp() {
+        synchronized (this) {
+            verdi++;
+        }
+    }
+
+
+“Ballen” (låseobjektet):
+Hva “ballen” betyr:
+	•	Det objektet du skriver inni synchronized (ballen)
+	•	Bare én tråd kan holde ballen om gangen
+	•	Andre tråder venter i kø
+	•	Når tråden er ferdig → ballen slippes → neste tar over
+Viktig:
+To synchronized-blokker som bruker ulike baller blokkerer ikke hverandre.
+Eksempel:
+    synchronized(lock1) { ... } // lås 1
+    synchronized(lock2) { ... } // lås 2
+disse to kan kjøres parallelt.
+
+Hvorfor fungerer dette? (monitors)
+Hvert Java-objekt har en monitor-lås innebygd.
+synchronized bruker denne.
+Når du skriver:
+    synchronized (objekt)
+Betyr det: “Få monitorlåsen til dette objektet.”
+Hvis en annen tråd allerede holder låsen → må du vente.
+
+Løser synchronized race conditions?
+JA.
+synchronized gjør to ting:
+✔Atomicitet
+Kritisk seksjon kjøres av én tråd om gangen.
+✔Synlighet (memory barrier)
+Når en tråd slipper låsen, må alle tråder se de nye verdiene.
+
+Dette løser både:
+	•	Race conditions
+	•	Visibility issues i Java Memory Model (kommer neste tema)
+
+
+
+Typisk trådsikker teller:
+    public class Teller {
+        private int verdi = 0;
+
+        public synchronized void opp() {
+            verdi++;
+        }
+
+        public synchronized void ned() {
+            verdi--;
+        }
+
+        public synchronized int hentVerdi() {
+            return verdi;
+        }
+    }
+Nå kan mange tråder bruke denne uten at noe blir feil.
+
+
+
+Tema : Java Memory Model (JMM):
+Java Memory Model forklarer hvordan tråder faktisk ser og deler data i minnet.
+Dette er viktig fordi tråder ikke automatisk ser det samme, selv om de deler variabler (!)
+
+Problemet JMM prøver å løse:
+Uten JMM ville dette skjedd hele tiden:
+	•	Tråd A endrer en variabel
+	•	Tråd B ser ikke endringen (fordi verdien er i CPU-cache)
+	•	Eller tråd B leser gammel data
+	•	Eller kode utføres i en annen rekkefølge enn du tror
+➡Dette gir rare, “spøkelsesaktige” bugs.
+
+CPU-er omorganiserer kode (“reordering”):
+CPU og kompilatoren kan endre rekkefølgen på instrukser for å gjøre ting raskere.
+Java tillater dette så lenge programmet ser riktig ut i én tråd.
+MEN: I multithreading kan dette bli feil fordi tråder påvirker hverandre.
