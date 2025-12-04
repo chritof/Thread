@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/code/BallerReentrantlock/BallerReentrantlock.iml" filepath="$PROJECT_DIR$/code/BallerReentrantlock/BallerReentrantlock.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code/Oppvarmingsoppgaver/Oppvarmingsoppgaver.iml" filepath="$PROJECT_DIR$/code/Oppvarmingsoppgaver/Oppvarmingsoppgaver.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code/ThreadIntro/ThreadIntro.iml" filepath="$PROJECT_DIR$/code/ThreadIntro/ThreadIntro.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code/ThreadLøsninger/ThreadLøsninger.iml" filepath="$PROJECT_DIR$/code/ThreadLøsninger/ThreadLøsninger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code/WaitNotify/WaitNotify.iml" filepath="$PROJECT_DIR$/code/WaitNotify/WaitNotify.iml" />
+      <module fileurl="file://$PROJECT_DIR$/code/code.iml" filepath="$PROJECT_DIR$/code/code.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/thread.iml" filepath="$PROJECT_DIR$/.idea/thread.iml" />
+    </modules>
+  </component>
+</project>
